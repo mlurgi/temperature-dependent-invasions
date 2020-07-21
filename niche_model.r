@@ -1,5 +1,46 @@
+## ---------------------------
+##
+## Script name: niche_model.r
+##
+## Purpose of script: This script implements the niche model as described by Williams
+## and Martinez (2000), and the bio-energetic food web dynamical model. A model grounded 
+## on a set of ordinary differential equations to simulate dynamics in complex food webs.
+## This model has been developed and previously used by Ulrich Brose and Amrei Binzer
+## in several publications.
+##
+## Additional helper functions are implemented to carry on different sets of tasks to
+## facilitate the set up and excution of the networks dynamics.
+##
+##
+## Author: Dr Miguel Lurgi
+## Lecturer in Biosciences (Computational Ecology)
+## Computational Ecology Lab - Department of Biosciences
+## Swansea University, UK
+## 
+## and
+##
+## Centre for Biodiversity Theory and Modelling
+## Theoretical and Experimental Ecology Station, CNRS, France
+##
+## Date Created: November-2018
+##
+## Copyright (c) Miguel Lurgi, 2018-2020
+## Email: miguel.lurgi@swansea.ac.uk
+##
+## ---------------------------
+##
+## Notes:
+## This script was first developed for the paper:
+##
+## Lurgi, Galiana, Lopez, Joppa, Montoya (2014) Network complexity and species traits mediate the effects of 
+## biological invasions on dynamic food webs. Frontiers in Ecology and Evolution, 2:36, 1-11.
+##
+## And is now provided as supplementary material for the paper:
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs. Uploaded to BioRXiv.
+##
+## ---------------------------
 
-
+## importing libraries
 library(igraph)
 library(deSolve)
 
@@ -170,17 +211,9 @@ NormalizeMatrix <- function(M){
 # Limits to trophic levels and omnivory in complex food webs: theory and data.
 
 TrophicPositions <- function(FW){
-  
   S <- dim(FW$M)[1];
-  
   M <- NormalizeMatrix(FW$M);
  
-  #print('printing matrix');
-  #print(FW$M);
-  #print(M);
-  #print(diag(S));
-  
-  #TP[j] = 1 + sum_over_i ( M[i,j] TL[i])
   if(det(diag(S) - t(M)) != 0){
     FW$TP <- solve(diag(S)-t(M), rep(1,S));
     
@@ -257,7 +290,6 @@ ObtainBodySize <- function(FW){
   FW <- TrophicPositions(FW);
   
   FW$original_TP <- FW$TP;
-  
   BS <- numeric(S);
   
   #the body sizes are assigned starting with the species with the lowest trophic position
@@ -287,33 +319,12 @@ ObtainATNParams <- function(FW){
   S <- dim(FW$M)[1]
   nprods <- length(FW$TP[FW$TP<=1]);
   FW$B0 <- 0.5;
-  
   FW$Wless <- FW$M/2;
-  
-  ######################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###################
-  
-  ###CHANGE THESE THINGS TO BE ONE PER SPECIES TO SEE HOW MUCH THIS AFFECTS THE
-  ###BEHAVIOUR OF THE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
-  #Hill exponent and predator interference term
-  #pred_int <- -1;
-  #while(pred_int < 0 | pred_int > 2){
-  #  pred_int <- rnorm(1, mean=0.1, sd=0.05);
-  #}
-  #h <- 0;
-  #while(h < 1 | h > 2){
-  #  h <- rnorm(1, mean=1.1, sd=0.05);
-  #}
   
   #for now, we are going to keep the parameters constant, so...
   pred_int <- 0.1;
-  #h <- 1.1;
-  
-  #######################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###################
-  
   FW$pred_int <- pred_int;
-  #FW$h <- h;
-  
+ 
   ##we give a particular hill exponent to each one of the species
   ##to tell how efficient they are capturing their prey
   ##the default value is 1.1
@@ -324,14 +335,8 @@ ObtainATNParams <- function(FW){
   FW$gr[FW$TP<=1] <- 1;
   
   FW$Mp <- mean(FW$BS[FW$TP<=1.0])  #mean body mass producers
-  #FW$Mc <- mean(FW$BS[FW$TP>1.0])   #mean body mass of consumers
   
   FW$metabolic <- numeric(S)  #metabolic rate
-  #alpha_x / alpha_r = 0.314 for all normalized metabolic rates
-  #this approach was wrong....
-  #FW$metabolic[FW$TP<=1.0] <- 0.314 * (FW$Mp / FW$Mp) ^ -0.25;  #producers
-  #FW$metabolic[FW$TP>1.0] <- 0.314 * (FW$Mc / FW$Mp) ^ -0.25;   #consumers
-  
   FW$metabolic <- 0.314 * (FW$BS / FW$Mp) ^ -0.25;
   
   #assimilation efficiencies: e_ij = 0.85 for carnivores and e_ij = 0.45 for herbivores
@@ -349,7 +354,6 @@ ObtainATNParams <- function(FW){
   }
   
   #we assign the carrying capacities for the basal species
-  #K_sys = S
   K <- numeric(S)
   K[FW$TP <= 1] <- 5/nprods;
   FW$K <- K;
@@ -357,102 +361,7 @@ ObtainATNParams <- function(FW){
   
 }
 
-#this function allows us to obtain a food-web like layout
-  GetRankLayout <- function(FW){
-    nodes <- nrow(as.matrix(FW$TrLevels));
-    layout <- matrix(0, nodes, 2);
-    n_per_level <- table(FW$TrLevels);
-    gap <- matrix(0,4,1);
-    
-    middle <- 6;
-    
-    next_right <- matrix(middle,5,1);
-    next_left <- matrix(middle,5,1);
-    for(i in 1:4){  #the number of levels in the ranking algorithm
-      gap[i] <- (middle*2)/n_per_level[names(n_per_level)==i-1];
-    }
-    
-    gap[3] <- gap[3]*2;
-    
-    count <- as.vector(table(FW$TrLevels));
-    
-    even <- FALSE;
-    for(i in 1:nodes){
-      if(FW$TrLevels[i] == 0){
-        layout[i,2] <- -6;
-        
-        if(abs(middle - next_left[1]) > abs(middle - next_right[1])){
-          
-          next_right[1] <- next_right[1] + gap[1];
-          layout[i,1] <- next_right[1];
-          
-        }else{
-          
-          layout[i,1] <- next_left[1];
-          next_left[1] <- next_left[1] - gap[1];
-        }
-        
-        if(count[1]%%2==0) layout[i,1] <- layout[i,1] - gap[1]*0.5;
-        
-      }else if(FW$TrLevels[i] == 1){
-        layout[i,2] <- -3.5;
-        if(abs(middle - next_left[2]) > abs(middle - next_right[2])){  
-          next_right[2] <- next_right[2] + gap[2];
-          layout[i,1] <- next_right[2];
-          
-        }else{
-          
-          layout[i,1] <- next_left[2];
-          next_left[2] <- next_left[2] - gap[2];
-        }
-        
-        if(count[2]%%2==0) layout[i,1] <- layout[i,1] - gap[2]*0.5;
-      }else if(FW$TrLevels[i] == 2){
-        if(even){
-          layout[i,2] <- 1;
-          if(abs(middle - next_left[3]) > abs(middle - next_right[3])){  
-            next_right[3] <- next_right[3] + gap[3];
-            layout[i,1] <- next_right[3];
-            
-          }else{          
-            
-            layout[i,1] <- next_left[3];
-            next_left[3] <- next_left[3] - gap[3];
-          }
-        }else{
-          layout[i,2] <- -0.5;
-          if(abs(middle - next_left[4]) > abs(middle - next_right[4])){  
-            next_right[4] <- next_right[4] + gap[3];
-            layout[i,1] <- next_right[4];
-            
-          }else{          
-            
-            layout[i,1] <- next_left[4];
-            next_left[4] <- next_left[4] - gap[3];
-          }
-        }
-        even <- !even;
-        
-        if(count[3]%%2==0) layout[i,1] <- layout[i,1] - gap[3]*0.5;
-        
-      }else{
-        layout[i,2] <- 5;
-        if(abs(middle - next_left[5]) > abs(middle - next_right[5])){   
-          next_right[5] <- next_right[5] + gap[4];
-          layout[i,1] <- next_right[5];
-        }else{
-          layout[i,1] <- next_left[5];
-          next_left[5] <- next_left[5] - gap[4];
-        }
-        if(count[4]%%2==0) layout[i,1] <- layout[i,1] - gap[4]*0.5;
-        
-      }
-    }
-    return(layout);
-  }
-
 #build the allometric trophic network based on the parameters above
-
 BuildATN <- function(S, C){
   #create the niche model web
   network <- NicheNetwork(S,C);
@@ -472,70 +381,18 @@ SolveEcoDynamics <- function(t, Xt, FW){
   S <- dim(FW$M)[1]
   Xt[Xt <= 1e-9] <- 0;
   Xt[Xt >= 1e9] <- 0;
-  
- # Xt[is.nan(Xt)] <- 0;
-  
-  
   B <- Xt;
-  
-  #print(t);
-  #print(B);
   
   #the functional response F_ji specifies the realised fraction
   #of consumption of species i on species j (i - predator, j - prey)
-  
   F <- matrix(0, S, S);
-  
-  #B[(is.nan(B))] <- 0.0;
-  #B[(is.na(B))] <- 0.0;
-  
-  #for(i in 1:length(B)){
-  #  if(is.nan(B[i]) || is.na(B[i])){
-  #    B[i] <- 0;
-  #  }
-  #}
-  
   for(i in 1:S){
     if(FW$TP[i] > 1){
-      
-      #print(B)
-      #print(FW$h)
-      
       fraction <- (FW$B0)^(FW$h[i]) + FW$pred_int*B[i] + FW$W[,i] %*% (B^FW$h[i]);
-      
-      #print(paste("B0", FW$B0, "h", FW$h, "pred int", FW$pred_int));
-      #print(B^FW$h);
-      #print(FW$W[,i]);
-      
-      
-      #print(paste("fraction" ,fraction));
       
       for(j in 1:S){
         interaction_j <- FW$W[j,i] * ((B[j])^(FW$h[i]));
         if(is.nan(fraction) || is.na(fraction)){
-          
-          
-          
-          print(paste("fraction" ,fraction));
-          print(paste("B0", FW$B0, "h", FW$h, "pred int", FW$pred_int));
-          print(t);
-          
-          print(FW$Final);
-          
-          print(Xt);
-          
-          print(B);
-          print(B^FW$h);
-          print(FW$W[,i]);
-          
-          print(FW$metabolic);
-          #print(FW$e);
-          
-          print(FW$Mc);
-          print(FW$Mp);
-          print(FW$ppmr);
-          print(FW$ratios);
-          
           if(fraction == 0){
             F[j,i] <- 0;  
           }
@@ -543,11 +400,7 @@ SolveEcoDynamics <- function(t, Xt, FW){
         }else{
           F[j,i] <- interaction_j / fraction;
         }
-        
-        #print(F[j,i]);
-        
       }
-      
     }
   }
   
@@ -557,40 +410,10 @@ SolveEcoDynamics <- function(t, Xt, FW){
     tmp <- F[i,] * FW$metabolic * B * FW$y;
     if(FW$original_TP[i] <= 1.0 & FW$K[i] > 0.0){   #producers...
       dB[i] <- FW$gr[i] * (1 - B[i]/FW$K[i]) * B[i] - sum(tmp[tmp!=0]/FW$e[i,tmp!=0]);
-      
-      #dB[i] <- FW$gr[i] * (1 - B[i]/FW$K[i]) * B[i] - sum(tmp[tmp!=0]);
-      
-      #if(is.nan(dB[i]) || is.na(dB[i])){
-        #print(paste(i,"dB_i is nan or na..."));
-        #print(tmp);
-        #print(paste("tmp", tmp, "gr", FW$gr[i], "B_i", B[i], "K", FW$K[i], sum(tmp[tmp!=0]/FW$e[i,tmp!=0])));
-        #print(FW);
-        
-        #if this happens an animal is now on the basal level and is in the process of dying
-        #hence its change of rate has to be negative
-      #  dB[i] <- -1;
-     # }
-      
     }else{  #consumers
       dB[i] <- -FW$metabolic[i]*B[i] + sum(F[,i]*B[i]*FW$metabolic[i]*FW$y) - sum(tmp[tmp!=0]/FW$e[i,tmp!=0]);
-      
-      #dB[i] <- -FW$metabolic[i]*B[i] + sum(F[,i]*B[i]*FW$metabolic[i]*FW$y*FW$e[,i]) - sum(tmp[tmp!=0]);
-      
-      
-     # if(is.nan(dB[i]) || is.na(dB[i])){
-        #print("dB_i is nan or na... in predator");
-        #print(tmp);
-        #print(paste("tmp", tmp, "F_i", F[,i], "B_i", B[i], "metabolic ", FW$metabolic[i], "y", FW$y, sum(tmp[tmp!=0]/FW$e[i,tmp!=0])));
-         
-     #   dB[i] <- -1;
-     # }
-      
-      
     }
   }
-
-  #print(paste("dB ", list(dB)));
-  
   return(list(dB));
 }
 
@@ -654,35 +477,20 @@ RecalculateFW <- function(FW){
   FW$radius <- FW$radius[index];
   FW$niche <- FW$niche[index];
   FW$centre <- FW$centre[index];
-  
-  
-  #print('this is the call within Recalculate FW');
-  
-  #print(paste('S',FW$S, 'C', FW$C, 'n', FW$niche, 'r', FW$radius, 'index', index));
   FW <- TrophicPositions(FW);   #within this function normalised matrix and trophic levels are recalculated as well
   FW$BS <- FW$BS[index];
   
   FW$gr <- FW$gr[index];
   FW$h <- FW$h[index];
-  
-  #FW$Mp <- mean(FW$BS[FW$TP <= 1.0]);
-  #FW$Mc <- mean(FW$BS[FW$TP >1.0]);
-  
-  #FW$metabolic <- numeric(SFinal)  #metabolic rate
-  #alpha_x / alpha_r = 0.314 for all normalized metabolic rates
-  #FW$metabolic[FW$TP<=1.0] <- 0.314 * (FW$Mp / FW$Mp) ^ -0.25;  #producers
-  #FW$metabolic[FW$TP>1.0] <- 0.314 * (FW$Mc / FW$Mp) ^ -0.25;   #consumers
-  
+ 
   #when we update the network after possible extinctions we shouldn't recalculate
   #the metabolic rates, since these should be maintained by the species,
   #specially if they are not changing body size
-  
   FW$metabolic <- FW$metabolic[index];
   
   FW$e <- FW$e[index, index];
   FW$K <- FW$K[index];
   
-  #FW$Initial <- FW$Initial[index];
   FW$Final <- FW$Final[index];
   
   return(FW);
@@ -694,9 +502,6 @@ RecalculateX <- function(out){
   for(i in 1:(m-1)){
     out[out[,(i+1)]<=1e-9, (i+1)] <- 0;
     out[out[,(i+1)]>=1e9, (i+1)] <- 0;
-    
-    #out[is.nan(out[,(i+1)]), (i+1)] <- 0;
-    
   }
   return(out);
 }
@@ -708,14 +513,6 @@ CheckStability <- function(FW, Tmax, threshold=1e-2){
   
   while(delta > threshold && t < Tmax){
     times <- seq(0, 1000, length=tlength);
-    
-    #print(paste('inside check stability', 'S', FW$S, 'C', FW$C, 'final', FW$Final));
-    
-    #print('FW$Final = ');
-    #print(FW$Final);
-    
-    #print(times);
-    
     out1 <- ode(y=FW$Final, times=times, func=SolveEcoDynamics, parms=FW);
     out2 <- ode(y=as.numeric(out1[tlength, -1]), times=times, func=SolveEcoDynamics, parms=FW);
     
@@ -725,12 +522,7 @@ CheckStability <- function(FW, Tmax, threshold=1e-2){
     avg1 <- apply(out1[,-1], 2, mean);
     avg2 <- apply(out2[,-1], 2, mean);
     
-    #print(out1[tlength,]);
-    #print(out2[1,]);
-    
     delta <- max(abs(avg1-avg2)/apply(rbind(avg1, avg2), 2, max))
-    
-    #print(delta);
     
     FW$Final <- out2[tlength, -1];
     FW <- RecalculateFW(FW);
@@ -760,28 +552,11 @@ CheckStability <- function(FW, Tmax, threshold=1e-2){
 GetStabilityMeasures <- function(FW, TMax=4000, tlength=200){
   
   if(! is.null(FW$dynamics)){
-    
-    #steps <- dim(FW$dynamics)[1];
-    #init <- as.integer(steps/2);
-    
-    #final_dynamics <- FW$dynamics[init:steps,];
-    
     final_dynamics <- FW$dynamics;
     tlength <- dim(final_dynamics)[1];
-    
-    
-      
   }else{
-    #each_t <- as.integer(TMax/2);
-    
     times <- seq(0, TMax, length=tlength);
-    #initial_dynamics <- RecalculateX(ode(y=FW$Final, times=times, func=SolveEcoDynamics, parms=FW));
-    
-    #FW$Final <- initial_dynamics[tlength, -1];
-    #FW <- RecalculateFW(FW);
-    
     final_dynamics <- RecalculateX(ode(y=FW$Final, times= times, func=SolveEcoDynamics, parms=FW));
-    
     FW$Final <- final_dynamics[tlength, -1];
   }
   
@@ -918,10 +693,6 @@ GetStableFoodWeb <- function(S=100, C=0.08, fraction=1.0, stability=TRUE){
     FW$Final <- Xt;
     
     FW <- ObtainDynamics(FW);
-    
-    #exec <- RecalculateX(RunDynamics(2000, tlength, FW=FW));
-    
-    #FW$Final <- exec[tlength, -1];
     FW <- RecalculateFW(FW);
     
     M_temp <- FW$M;
@@ -997,155 +768,3 @@ ObtainDynamics <- function(FW){
   
   
 }
-
-#write.table(a$M, file = "network.csv", append=FALSE, sep=",", col.names=FALSE, row.names=FALSE)
-#analyse.single(filename="network.csv")
-#plotweb(col=1:9, radii=c(7,8,9,10,11,12,13,14,15))
-
-RunModel <- function(S=100, C=0.08){
-  fwno <- sample(1:1000, 1);
-  
-  #S <- 100;
-  #C <- 0.08;
-  
-  Tmax <- 4000;
-  tlength <- 200;
-  
-  set.seed(fwno);
-  
-  
-  finished <- FALSE;
-  
-  while(!finished){
-    FW <- BuildATN(S,C);
-    FW$orig_fw <- FW;
-    
-    Xt <- runif(S, 0.05, 1);
-    FW$Initial <- Xt;
-    FW$Final <- Xt;
-    
-    exec <- RecalculateX(RunDynamics(Tmax, tlength, FW=FW));
-    
-#    print(sum(exec[tlength, -1]));
-    
-    FW$Final <- exec[tlength, -1];
-    FW <- RecalculateFW(FW);
-    
-    #print("The execution was ok");
-    #print(paste("number of species = ", FW$S));
-    
-    #if(FW$S < S/2){
-    #  print("too few species, starting over...");
-    #  next;
-    #}
-    
-    #print(FW$Final);
-    #print(FW$W);
-    
-    #integrate the dynamics
-#    FW <- CheckStability(FW, Tmax);
-#    FW <- RecalculateFW(FW);
-    
-    #print(FW$S);
-    
-#    if(FW$State == 0){
-#      print("Model not stable");
-#      next;
-#    }
-    
-    finished = TRUE;
-    
-    extinct <- S - FW$S; 
-    
-  }
-  
-  # save(FW, file=paste('RFile-FW-S-',FW$S,'-C-', round(FW$C, 3), '-no-', fwno, '.RData', sep=''))
-  
-  print("RunModel :: plot the dynamics");
-  # pdf(paste('Plot-dynamics-S',FW$S,'-C-', round(FW$C, 3), '-no-', fwno, '.pdf', sep=''), width=10, height=4);
-  par(mar=c(4,4,1,1));
-  plot(0,0,type='n', xlab='Time', ylab='Species biomass', xlim=range(exec[,1]), ylim=range(exec[,-1]))
-  
-  colours <- rainbow(FW$S);
-  for(k in 1:FW$S){
-    lines(exec[,1], exec[,1+k], col=colours[k], lwd=2);
-  }
-  
-  legend("topleft", paste(c("Initial = ", "Extinctions = "), c(S, extinct)), bty='n');
-  # dev.off();
-}
-
-
-#a <- BuildATN(100, 0.08);
-#a <- TrophicPositions(a)
-#sna::gplot(a$M, diag=TRUE, coord=GetRankLayout(a))
-
-#for(i in 1:10000){
-# print(paste("running", i));
- 
-# S <- as.integer(msm::rtnorm(1, mean=100, sd=20, lower=80, upper=120));
-# C <- msm::rtnorm(1, mean=0.08, sd=0.01, lower=0.06, upper=0.1);
- 
-# RunModel(S,C);
-#}
-
-
-################ This was a test for the dingo food web!!!! #######################
-
-BuildATNModule <- function(){
-  #create the niche model web
-  
-  M <- matrix(c(0,1,1,1,0,0,0, 0,0,0,0,1,1,1, 0,0,0,0,1,1,0, 0,0,0,0,0,0,1, 0,0,0,0,0,0,1, 0,0,0,0,0,0,1, 0,0,0,0,0,0,0), ncol=7, nrow = 7, byrow=T)
-  
-  network <- list(S=dim(M)[1], C=sum(M)/((dim(M)[1])**2), M=M, original_C=sum(M)/((dim(M)[1])**2))
-  #obtain the body sizes for the species in the network
-  network <- ObtainBodySize(network);
-  #obtain the parameters for the allometric model
-  network <- ObtainATNParams(network);
-}
-
-
-RunModule <- function(){
-  fwno <- sample(1:1000, 1);
-  set.seed(fwno);
-  Tmax <- 1000;
-  tlength <- 200;
-  finished <- FALSE;
-  
-  while(!finished){
-    FW <- BuildATNModule();
-    FW$orig_fw <- FW;
-    
-    Xt <- runif(7, 0.05, 1);
-    FW$Initial <- Xt;
-    FW$Final <- Xt;
-    
-    exec <- RecalculateX(RunDynamics(Tmax, tlength, FW=FW));
-    FW$Final <- exec[tlength, -1];
-    FW <- RecalculateFW(FW);
-    finished = TRUE;
-    extinct <- 7 - FW$S;
-  }
-  
-  FW <- TrophicPositions(FW)
-  sna::gplot(FW$M, diag=TRUE, coord=GetRankLayout(FW))
-  
-  # save(FW, file=paste('RFile-FW-S-',FW$S,'-C-', round(FW$C, 3), '-no-', fwno, '.RData', sep=''))
-  
-  print("RunModel :: plot the dynamics");
-  # pdf(paste('Plot-dynamics-S',FW$S,'-C-', round(FW$C, 3), '-no-', fwno, '.pdf', sep=''), width=10, height=4);
-  par(mar=c(4,4,1,1));
-  plot(0,0,type='n', xlab='Time', ylab='Species biomass', xlim=range(exec[,1]), ylim=range(exec[,-1]))
-  
-  colours <- c('black', 'red', 'blue', 'green', 'yellow', 'magenta', 'cyan') #rainbow(FW$S);
-  for(k in 1:FW$S){
-    lines(exec[,1], exec[,1+k], col=colours[k], lwd=2);
-  }
-  
-  legend("topleft", paste(c("Initial = ", "Extinctions = "), c(7, extinct)), bty='n');
-  # dev.off();
-}
-
-RunModule()
-                           
-                           

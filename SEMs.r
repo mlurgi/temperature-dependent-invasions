@@ -1,3 +1,36 @@
+## ---------------------------
+##
+## Script name: SEMs.r
+##
+## Purpose of script: This script takes the output tables from the temperature dependent simulation
+## experiments and extracts and analyses the relevant information to investigate the size of the 
+## effects of invasions on complex food webs. It additionally compares the effects of invasions
+## on communities on which the invasive species was successfully established vs. those resulting
+## from unsucessful invasion attempts, across a large temperature gradient (from 0 to 40 degrees)
+##
+## Author: Dr Miguel Lurgi
+## Lecturer in Biosciences (Computational Ecology)
+## Computational Ecology Lab - Department of Biosciences
+## Swansea University, UK
+## 
+## and
+##
+## Centre for Biodiversity Theory and Modelling
+## Theoretical and Experimental Ecology Station, CNRS, France
+##
+## Date Created: November-2018
+##
+## Copyright (c) Miguel Lurgi, 2018-2020
+## Email: miguel.lurgi@swansea.ac.uk
+##
+## ---------------------------
+##
+## Notes:
+##
+## This script is provided as supplementary material for the paper:
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs
+##
+## ---------------------------
 
 
 require(lme4)
