@@ -2,15 +2,15 @@
 
 Start here!
 
-# Author: Dr Miguel Lurgi
-# Lecturer in Biosciences (Computational Ecology)
-# Computational Ecology Lab - Department of Biosciences
-# Swansea University, UK
+Author: Dr Miguel Lurgi
+Lecturer in Biosciences (Computational Ecology)
+Computational Ecology Lab - Department of Biosciences
+Swansea University, UK
  
-# and
+and
 
-# Centre for Biodiversity Theory and Modelling
-# Theoretical and Experimental Ecology Station, CNRS, France
+Centre for Biodiversity Theory and Modelling
+Theoretical and Experimental Ecology Station, CNRS, France
 
 Date Created: 19-12-2019
 
