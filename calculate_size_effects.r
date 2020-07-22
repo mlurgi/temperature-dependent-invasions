@@ -29,7 +29,7 @@
 ## Notes:
 ##
 ## This script is provided as supplementary material for the paper:
-## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs. Uploaded to BioRXiv. https://doi.org/10.1101/2020.07.20.211516
 ##
 ## ---------------------------
 
@@ -39,7 +39,8 @@ require(RColorBrewer)
 require(lme4)
 require(piecewiseSEM)
 
-######## The following function is defined to calculate some summary statistics over the data tables
+##### The following function is defined to calculate some summary statistics over the data tables
+##### It was written and provided by Arnaud Sentis
 getPropertiesSummary <- function(x){
   require(plyr)
   str(x)

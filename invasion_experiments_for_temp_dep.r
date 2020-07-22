@@ -1,4 +1,46 @@
+## ---------------------------
+##
+## Script name: invasion_experiments_for_temp_dep.r
+##
+## Purpose of script: This script implements the invasion experiments on complex food
+## webs. Several different invasion types are implemented by different functions, according
+## to different traits of the invader.
+##
+## Towards the end of the script, the experimentation protocol to run the invasion simulations
+## across temperature regimes is implemented.
+##
+## Author: Dr Miguel Lurgi
+## Lecturer in Biosciences (Computational Ecology)
+## Computational Ecology Lab - Department of Biosciences
+## Swansea University, UK
+## 
+## and
+##
+## Centre for Biodiversity Theory and Modelling
+## Theoretical and Experimental Ecology Station, CNRS, France
+##
+## Date Created: October-2012
+##
+## Copyright (c) Miguel Lurgi, 2018-2020
+## Email: miguel.lurgi@swansea.ac.uk
+##
+## ---------------------------
+##
+## Notes:
+## This script was first developed for the paper:
+##
+## Lurgi, Galiana, Lopez, Joppa, Montoya (2014) Network complexity and species traits mediate the effects of 
+## biological invasions on dynamic food webs. Frontiers in Ecology and Evolution, 2:36, 1-11.
+##
+## Additions incoporating the temperature dependence effect of the food web on the invasions
+## were developed for our current paper:
+##
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs. Uploaded to BioRXiv. https://doi.org/10.1101/2020.07.20.211516
+##
+## for which this script is now presented as supplementary material
+## ---------------------------
 
+## sourcing scripts
 source('temp-dep-food-web.r');
 source('utils.r');
 
@@ -1039,8 +1081,10 @@ ExecuteModelFromFoodWeb <- function(FW, invaded=FALSE){
   return(FW);
 }
 
-replicates <- 105;
 
+############### TEMPERATURE DEPENDENT INVASIONS START HERE #####################
+
+replicates <- 100;
 start_time <- proc.time()
 # ExperimentsProtocol <- function(){
   

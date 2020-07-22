@@ -28,7 +28,7 @@
 ## Notes:
 ##
 ## This script is provided as supplementary material for the paper:
-## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs. Uploaded to BioRXiv. https://doi.org/10.1101/2020.07.20.211516
 ##
 ## ---------------------------
 
@@ -359,38 +359,3 @@ sem_invaded$coefficients[which(sem_invaded$coefficients$Response == 'L'),]$Std.E
 
 write.csv(sem_invaded$coefficients, file = 'coefficients-second-half.csv')
 write.csv(sem_invaded$R2, file = 'r-squared-second-half.csv')
-
-
-
-
-######## This code is to look at the residuals and dispersion of models to see if we are happy with these...
-
-your_model <- glmer(L ~ S + temperature_c + (1|id), data=data_first_half, nAGQ=0, family=MASS::negative.binomial(theta=1e5))
-
-simulationOutput <- simulateResiduals(fittedModel = your_model, n=2000, plot=F, refit = F)
-testResiduals(simulationOutput)
-plot(simulationOutput)
-testDispersion(simulationOutput, alternative = 'less')
-
-your_model <- glmer(S ~ temperature_c + (1|id), data=data_first_half, nAGQ=0, family=poisson)
-dispersion_glmer(your_model)
-
-your_model <- lmer(L.S ~S + temperature_c + (1|id), data=data_first_half)
-dispersion_glmer(your_model)
-
-par(mfrow=c(2,2))
-qqnorm(resid(your_model), main="normal qq-plot, residuals")
-qqline(resid(your_model))
-
-qqnorm(ranef(your_model)$id[,1])
-qqline(ranef(your_model)$id[,1])
-
-plot(fitted(your_model), resid(your_model)) #residuals vs fitted
-abline(h=0)
-
-fitted <- fitted(your_model)    #fitted vs observed
-plot(fitted, jitter(data_first_half$L.S,0.1))
-abline(0,1)
-
-
-

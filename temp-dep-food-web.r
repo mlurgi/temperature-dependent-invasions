@@ -1,3 +1,53 @@
+## ---------------------------
+##
+## Script name: temp-dep-food-web.r
+##
+## Purpose of script: This script implements the niche model as described by Williams
+## and Martinez (2000), and the bio-energetic food web dynamical model. A model grounded 
+## on a set of ordinary differential equations to simulate dynamics in complex food webs.
+## This model has been developed and previously used by Ulrich Brose and Amrei Binzer
+## in several publications.
+##
+## It extends the bio-energetic model by incorporating temperature dependency of several
+## parameters such as growth and metabolic rates, interaction strengths and handling times, as
+## presented in Binzer et al. 2016.
+##
+## Additional helper functions are implemented to carry on different sets of tasks to
+## facilitate the set up and excution of the networks dynamics.
+##
+##
+## Author: Dr Miguel Lurgi
+## Lecturer in Biosciences (Computational Ecology)
+## Computational Ecology Lab - Department of Biosciences
+## Swansea University, UK
+## 
+## and
+##
+## Centre for Biodiversity Theory and Modelling
+## Theoretical and Experimental Ecology Station, CNRS, France
+##
+## Date Created: October-2012
+##
+## Copyright (c) Miguel Lurgi, 2018-2020
+## Email: miguel.lurgi@swansea.ac.uk
+##
+## ---------------------------
+##
+## Notes:
+## This script was first developed for the paper:
+##
+## Lurgi, Galiana, Lopez, Joppa, Montoya (2014) Network complexity and species traits mediate the effects of 
+## biological invasions on dynamic food webs. Frontiers in Ecology and Evolution, 2:36, 1-11.
+##
+## And is now provided as supplementary material for the paper:
+## Sentis, Montoya & Lurgi (2020) Warming indirectly incrases invasion success in food webs. Uploaded to BioRXiv. https://doi.org/10.1101/2020.07.20.211516
+##
+## Temperature scaling of different model parameters as specified in:
+## Binzer et al. (2016) Interactive effects of warming, eutrophication and size structure: Impacts on biodiversity and food-web structure.
+##         Global Change Biology 22, 220–227, doi: 10.1111/gcb.13086
+## ---------------------------
+
+## importing libraries
 library(igraph)
 library(deSolve)
 
@@ -467,96 +517,3 @@ RunDynamics <- function(MaxTime=100, length, FW){
   return(out);
 }
 
-
-GetRankLayout <- function(FW){
-  nodes <- nrow(as.matrix(FW$TrLevels));
-  layout <- matrix(0, nodes, 2);
-  n_per_level <- table(FW$TrLevels);
-  gap <- matrix(0,4,1);
-  
-  middle <- 6;
-  
-  next_right <- matrix(middle,5,1);
-  next_left <- matrix(middle,5,1);
-  for(i in 1:4){  #the number of levels in the ranking algorithm
-    gap[i] <- (middle*2)/n_per_level[names(n_per_level)==i-1];
-  }
-  
-  gap[3] <- gap[3]*2;
-  
-  count <- as.vector(table(FW$TrLevels));
-  
-  even <- FALSE;
-  for(i in 1:nodes){
-    if(FW$TrLevels[i] == 0){
-      layout[i,2] <- -6;
-      
-      if(abs(middle - next_left[1]) > abs(middle - next_right[1])){
-        
-        next_right[1] <- next_right[1] + gap[1];
-        layout[i,1] <- next_right[1];
-        
-      }else{
-        
-        layout[i,1] <- next_left[1];
-        next_left[1] <- next_left[1] - gap[1];
-      }
-      
-      if(count[1]%%2==0) layout[i,1] <- layout[i,1] - gap[1]*0.5;
-      
-    }else if(FW$TrLevels[i] == 1){
-      layout[i,2] <- -3.5;
-      if(abs(middle - next_left[2]) > abs(middle - next_right[2])){  
-        next_right[2] <- next_right[2] + gap[2];
-        layout[i,1] <- next_right[2];
-        
-      }else{
-        
-        layout[i,1] <- next_left[2];
-        next_left[2] <- next_left[2] - gap[2];
-      }
-      
-      if(count[2]%%2==0) layout[i,1] <- layout[i,1] - gap[2]*0.5;
-    }else if(FW$TrLevels[i] == 2){
-      if(even){
-        layout[i,2] <- 1;
-        if(abs(middle - next_left[3]) > abs(middle - next_right[3])){  
-          next_right[3] <- next_right[3] + gap[3];
-          layout[i,1] <- next_right[3];
-          
-        }else{          
-          
-          layout[i,1] <- next_left[3];
-          next_left[3] <- next_left[3] - gap[3];
-        }
-      }else{
-        layout[i,2] <- -0.5;
-        if(abs(middle - next_left[4]) > abs(middle - next_right[4])){  
-          next_right[4] <- next_right[4] + gap[3];
-          layout[i,1] <- next_right[4];
-          
-        }else{          
-          
-          layout[i,1] <- next_left[4];
-          next_left[4] <- next_left[4] - gap[3];
-        }
-      }
-      even <- !even;
-      
-      if(count[3]%%2==0) layout[i,1] <- layout[i,1] - gap[3]*0.5;
-      
-    }else{
-      layout[i,2] <- 5;
-      if(abs(middle - next_left[5]) > abs(middle - next_right[5])){   
-        next_right[5] <- next_right[5] + gap[4];
-        layout[i,1] <- next_right[5];
-      }else{
-        layout[i,1] <- next_left[5];
-        next_left[5] <- next_left[5] - gap[4];
-      }
-      if(count[4]%%2==0) layout[i,1] <- layout[i,1] - gap[4]*0.5;
-      
-    }
-  }
-  return(layout);
-}
