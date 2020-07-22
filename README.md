@@ -2,20 +2,20 @@
 
 Start here!
 
-## Author: Dr Miguel Lurgi
-## Lecturer in Biosciences (Computational Ecology)
-## Computational Ecology Lab - Department of Biosciences
-## Swansea University, UK
-## 
-## and
-##
-## Centre for Biodiversity Theory and Modelling
-## Theoretical and Experimental Ecology Station, CNRS, France
-##
-## Date Created: 19-12-2019
-##
-## Copyright (c) Miguel Lurgi, 2019
-## Email: miguel.lurgi@swansea.ac.uk
+# Author: Dr Miguel Lurgi
+# Lecturer in Biosciences (Computational Ecology)
+# Computational Ecology Lab - Department of Biosciences
+# Swansea University, UK
+ 
+# and
+
+# Centre for Biodiversity Theory and Modelling
+# Theoretical and Experimental Ecology Station, CNRS, France
+
+Date Created: 19-12-2019
+
+Copyright (c) Miguel Lurgi, 2019
+Email: miguel.lurgi@swansea.ac.uk
 
 This repository contains the source code used to produce the results presented in our paper entitled:
 
